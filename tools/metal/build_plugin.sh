@@ -43,6 +43,12 @@ for p in "$NM"/bridge/patches/000*.patch; do
 	echo "   $(basename "$p")"
 	git -C "$M2V" apply "$p"
 done
+# Match the patches used by the maintainer's Linux build, rather than the older CI binary.
+for p in "$ROOT"/tools/metal/m2v/[0-9][0-9][0-9][0-9]-*.patch; do
+	[ -f "$p" ] || continue
+	echo "   data-a-live/$(basename "$p")"
+	git -C "$M2V" apply "$p"
+done
 LLVM_AS=$(brew --prefix llvm)/bin/llvm-as
 "$LLVM_AS" -o "$B/runtime_examples.air" "$M2V/crates/metal2vulkan-validation/fixtures/public/examples/runtime_examples.ll"
 "$LLVM_AS" -o "$B/function_constant.air" "$M2V/crates/metal2vulkan-validation/fixtures/public/kernel_function_constant_gate_fold.ll"
