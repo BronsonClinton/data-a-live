@@ -130,6 +130,25 @@ jobs:
           fetch NativeMobileDisplay https://github.com/UniXNU/NativeMobileDisplay.git "$NATIVEMOBILEDISPLAY_SHA"
           bash tools/metal/build_plugin.sh unixnu nativemetal nativeadreno metal2vulkan mesa out/metal
 
+      - name: iOS helper binaries
+        run: |
+          mkdir -p out/helpers
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          xcrun clang -target arm64-apple-ios16.0 -isysroot "$SDK" -O2 -Wall \
+            tools/fairplay/pandora_fairplayd.c -o out/helpers/pfd
+          xcrun clang -target arm64-apple-ios16.0 -isysroot "$SDK" -O2 -Wall \
+            -framework CoreFoundation tools/sink/pandora_sink.c -o out/helpers/pandora_sink
+          codesign -s - -f --identifier com.data-a-live.pfd out/helpers/pfd
+          codesign -s - -f --identifier com.data-a-live.sink out/helpers/pandora_sink
+          (cd out/helpers && shasum -a 256 pfd pandora_sink > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-helpers
+          path: out/helpers
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Metal summary
         if: always()
         run: |
