@@ -1,0 +1,38 @@
+name: Bluetooth iOS16 bootstrap
+on:
+  push:
+    branches: [pc-bluetooth-ios16]
+    paths: ['tools/bluetooth-ios16/**', '.github/workflows/bluetooth-ios16.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and verify iOS16 arm64 bootstrap
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          xcrun --sdk iphoneos clang -target arm64-apple-ios16.0 -isysroot "$SDK" \
+            -O2 -Wall -Wextra -Werror -fblocks -fstack-protector-strong \
+            tools/bluetooth-ios16/BlueTool.c -o out/BlueTool
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          Path('out/entitlements.plist').write_bytes(plistlib.dumps({'com.apple.private.security.no-container':True}))
+          PY
+          codesign --force --sign - --pagesize 4096 --identifier org.unixnu.bluetooth.BlueTool \
+            --entitlements out/entitlements.plist out/BlueTool
+          codesign --verify --strict out/BlueTool
+          codesign -d --verbose=4 out/BlueTool 2> out/signature.txt
+          xcrun vtool -show-build out/BlueTool > out/platform.txt
+          shasum -a 256 out/BlueTool tools/bluetooth-ios16/BlueTool.c > out/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bluetooth-ios16-bootstrap
+          path: out/
+          retention-days: 7
