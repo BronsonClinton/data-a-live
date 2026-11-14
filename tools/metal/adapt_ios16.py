@@ -1383,3 +1383,12 @@ extern "C" size_t native_bridge_metal_pandora_work(char *out,size_t size) {
 }
 ''')
 print('added the work counts to the report')
+
+# Backport the encoder-lifetime guard from UniXNU/AdrenoMetal ce5e19e
+# (MIT, original upstream attribution retained in the source checkout).
+# RenderBox caches encoder IMPs; nil makes it call address zero. Return an
+# object whose command buffer is already refused. This prevents the null-IMP
+# crash; it deliberately does not advertise unsupported render-target formats.
+edit('NativeBridgeMetalFrontend.mm',
+     ''' if(!handle){[self refuse:[NSString stringWithFormat:@"%@: %@",what,lastError()]];return nil;}''',
+     ''' if(!handle){[self refuse:[NSString stringWithFormat:@"%@: %@",what,lastError()]];encoder.commandBuffer=self;return encoder;}''')
