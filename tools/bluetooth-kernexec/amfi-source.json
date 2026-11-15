@@ -1,0 +1,9 @@
+{
+  "original_sha256": "d3bfc133df6b50ac8277f748a4cc0b0878f5448d65c2e0e989dbe9588f0b9456",
+  "patched_sha256": "21996b9030b9dac92e998daf7a702c4d6cdf2c193d2876198bda45342ac2faee",
+  "gate": "pandora_bt_user_pipe=1",
+  "privilege": 12000,
+  "requires_original_signed_boolean_entitlement": "com.apple.private.skywalk.register-user-pipe",
+  "requires_current_credential": true,
+  "hardware_tested": false
+}

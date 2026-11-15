@@ -65,3 +65,26 @@ if (S/'aks-source.json').exists():
         'upstream_commit':aks_manifest['upstream_commit'],'command':cpp_args,'compiler':version,
         'host_tested':True,'hardware_tested':False},indent=2)+'\n')
     print('PASS: opt-in iOS16 software AKS service compiled with original Apple C++ ABI and real builtins')
+if (S/'amfi-source.json').exists():
+    import shutil
+    amfi_manifest=json.loads((S/'amfi-source.json').read_text())
+    amfi_source=T/'xnu/bsd/kern/sweet_amfi.c'
+    assert hashlib.sha256(amfi_source.read_bytes()).hexdigest()==amfi_manifest['original_sha256']
+    shutil.copyfile(S/'sweet_amfi.c',amfi_source)
+    assert hashlib.sha256(amfi_source.read_bytes()).hexdigest()==amfi_manifest['patched_sha256']
+    amfi_args=[compiler]
+    for a in json.loads((S/'amfi-original-command.json').read_text())[1:]:
+        if 'Kernel.framework/Versions/A/PrivateHeaders/platform' in a:
+            a='-I'+str(T/'sdk-kernel-platform/platform')
+        else:a=a.replace(ci,str(T))
+        assert '__builtin_xnu_' not in a
+        amfi_args.append(a)
+    amfi_args+=['-o',str(O/'sweet_amfi.o')]
+    result=subprocess.run(amfi_args,cwd=T/'build/xnu.obj/DEVELOPMENT_ARM64_PANDORA/bsd/DEVELOPMENT',capture_output=True,text=True)
+    (O/'amfi-compile.log').write_text(result.stdout+result.stderr)
+    if result.returncode:raise SystemExit(result.stderr[-8000:])
+    (O/'amfi-report.json').write_text(json.dumps({'compiled':True,'real_apple_allocator_builtins':True,
+        'builtin_overrides':[],'source_sha256':amfi_manifest['patched_sha256'],
+        'object_sha256':hashlib.sha256((O/'sweet_amfi.o').read_bytes()).hexdigest(),
+        'command':amfi_args,'compiler':version,'host_scope_tested':True,'hardware_tested':False},indent=2)+'\n')
+    print('PASS: opt-in signed user-pipe entitlement grant compiled with original Apple command and builtins')
