@@ -1,0 +1,28 @@
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -1325,11 +1325,25 @@
+  static struct sweet_execswap swap;
+  static bool parsed;
+  static unsigned logged;
++ static bool native_bluetooth;
+  lck_mtx_lock(&sweet_execswap_lock);
+  if (!parsed) {
++  int phase=0;
++  native_bluetooth=PE_parse_boot_argn("pandora_radio",&phase,sizeof(phase)) && phase==5;
+   if (PE_parse_boot_argn("sweetexecswap", swap.arg, sizeof(swap.arg)))
+    (void)sweet_execswap_parse(&swap);
+   parsed = true;
++ }
++ /* Native candidates live only in the iOS container. Phase5 selects these
++  * two exact system paths; all other phases retain the original executables. */
++ if(native_bluetooth && path) {
++  const char *bt=NULL;
++  if(!strcmp(path,"/usr/sbin/bluetoothd"))bt="/usr/libexec/qbt/bluetoothd";
++  else if(!strcmp(path,"/usr/sbin/BlueTool"))bt="/usr/libexec/qbt/BlueTool";
++  if(bt) {
++   if(logged<8){++logged;printf("PANDORA BT EXECSWAP: %s -> %s pid %d\n",path,bt,pid);}
++   lck_mtx_unlock(&sweet_execswap_lock);return bt;
++  }
+  }
+  const char *replacement = sweet_execswap_match(&swap, path);
+  if (replacement && logged < 8) {

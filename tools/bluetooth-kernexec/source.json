@@ -1,0 +1,6 @@
+{
+  "original_sha256": "f2e1cb8f9d8dcf6e4eab2f7efc0c7874097dcf80cea752850b23a4358c25ed2b",
+  "patched_sha256": "b688a2dbea3d8c62887b7b69a496a506c87bc08417465eb8a34ecac8d29e8169",
+  "enabled_only_phase": 5,
+  "original_paths_preserved": true
+}

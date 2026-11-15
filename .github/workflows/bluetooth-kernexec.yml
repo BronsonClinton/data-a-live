@@ -1,0 +1,29 @@
+name: Bluetooth exec hook Apple compiler
+on:
+  push:
+    branches: [pc-bluetooth-ios16]
+    paths: ['tools/bluetooth-kernexec/**', '.github/workflows/bluetooth-kernexec.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch original recorded build tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 43012468378 -R yechenan/data-a-live -n xnu-buildtree -D input
+          mkdir -p target out
+          tar xzf input/buildtree.tgz -C target
+      - name: Compile only exec hook with actual Apple allocator builtins
+        run: python3 tools/bluetooth-kernexec/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bluetooth-kernexec-apple
+          path: out/
+          retention-days: 7
