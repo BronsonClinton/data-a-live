@@ -40,3 +40,28 @@ if result.returncode:raise SystemExit(result.stderr[-8000:])
     'source_sha256':exit_manifest['patched_sha256'],'object_sha256':hashlib.sha256((O/'kern_exit.o').read_bytes()).hexdigest(),
     'command':exit_args,'compiler':version,'hardware_tested':False},indent=2)+'\n')
 print('PASS: native exec hook compiled by Apple clang with original typed allocator builtins')
+if (S/'aks-source.json').exists():
+    import shutil
+    aks_manifest=json.loads((S/'aks-source.json').read_text())
+    aks_source=T/'xnu/iokit/Kernel/arm/SweetKeyStore.cpp'
+    assert hashlib.sha256(aks_source.read_bytes()).hexdigest()==aks_manifest['original_sha256']
+    shutil.copyfile(S/'SweetKeyStore.cpp',aks_source)
+    assert hashlib.sha256(aks_source.read_bytes()).hexdigest()==aks_manifest['patched_sha256']
+    cpp_compiler=subprocess.check_output(['xcrun','--find','clang++'],text=True).strip()
+    cpp_args=[cpp_compiler]
+    for a in json.loads((S/'aks-original-command.json').read_text())[1:]:
+        if 'Kernel.framework/Versions/A/PrivateHeaders/platform' in a:
+            a='-I'+str(T/'sdk-kernel-platform/platform')
+        else:a=a.replace(ci,str(T))
+        assert '__builtin_xnu_' not in a
+        cpp_args.append(a)
+    cpp_args+=['-o',str(O/'SweetKeyStore.o')]
+    result=subprocess.run(cpp_args,cwd=T/'build/xnu.obj/DEVELOPMENT_ARM64_PANDORA/iokit/DEVELOPMENT',capture_output=True,text=True)
+    (O/'aks-compile.log').write_text(result.stdout+result.stderr)
+    if result.returncode:raise SystemExit(result.stderr[-8000:])
+    (O/'aks-report.json').write_text(json.dumps({'compiled':True,'real_apple_allocator_builtins':True,
+        'builtin_overrides':[],'source_sha256':aks_manifest['patched_sha256'],
+        'object_sha256':hashlib.sha256((O/'SweetKeyStore.o').read_bytes()).hexdigest(),
+        'upstream_commit':aks_manifest['upstream_commit'],'command':cpp_args,'compiler':version,
+        'host_tested':True,'hardware_tested':False},indent=2)+'\n')
+    print('PASS: opt-in iOS16 software AKS service compiled with original Apple C++ ABI and real builtins')

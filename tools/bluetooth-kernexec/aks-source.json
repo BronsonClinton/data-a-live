@@ -1,0 +1,29 @@
+{
+  "original_sha256": "0224ef7ac3fd78511b4cb4369f9099352f80a9b434ae3fd15b5a3dbd1f145d55",
+  "patched_sha256": "864a80d356c2abb51fdc9b992bde7b639ebd9a74c808bcbf9a53d2c8eb722e2b",
+  "upstream_commit": "6ff4f11d8fdf853351f8d98e1bbe1373fb8da2e6",
+  "upstream_source_sha256": "0d3185f25ee7da67ddbf308753e147ee272ca03f257b156969a21526ab40c21b",
+  "host_tests": {
+    "host_service_test_passed": true,
+    "source_sha256": "864a80d356c2abb51fdc9b992bde7b639ebd9a74c808bcbf9a53d2c8eb722e2b",
+    "identities": [
+      {
+        "identity_fixture": 1,
+        "passed": true
+      },
+      {
+        "identity_fixture": 9,
+        "passed": true
+      }
+    ],
+    "actual_target_service_source_executed": true,
+    "independent_hashlib_blob_and_uuid_verified": true,
+    "inband_and_descriptor_outputs": true,
+    "tamper_rejected": true,
+    "old_state_preserved_when_disabled": true,
+    "new_no_passcode_state_verified": true,
+    "not_hardware_security": true,
+    "target_compiled": false,
+    "hardware_tested": false
+  }
+}
