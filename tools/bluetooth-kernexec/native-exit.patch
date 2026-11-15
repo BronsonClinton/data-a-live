@@ -1,0 +1,23 @@
+--- a/bsd/kern/kern_exit.c
++++ b/bsd/kern/kern_exit.c
+@@ -1577,6 +1577,20 @@
+ 	p->p_exit_reason = exit_reason;
+ 
+ 	p->p_lflag |= P_LEXIT;
++#if defined(PANDORA)
++	if (!strcmp(p->p_comm,"bluetoothd") || !strcmp(p->p_comm,"BlueTool")) {
++		int phase=0;
++		if (PE_parse_boot_argn("pandora_radio",&phase,sizeof(phase)) && phase==5) {
++			printf("PANDORA BT EXIT: %s pid=%d raw=%#x signal=%d status=%d\n",
++			    p->p_comm,proc_getpid(p),rv,WTERMSIG(rv),WEXITSTATUS(rv));
++			if (PROC_HAS_EXITREASON(p)) {
++				char *desc=exit_reason_get_string_desc(p->p_exit_reason);
++				printf("PANDORA BT EXIT: namespace=%u code=%#llx description=%s\n",
++				    p->p_exit_reason->osr_namespace,p->p_exit_reason->osr_code,desc?desc:"(none)");
++			}
++		}
++	}
++#endif
+ 	p->p_xstat = rv;
+ 	p->p_lflag |= jetsam_flags;
+ 

@@ -27,4 +27,16 @@ report={'compiled':True,'real_apple_allocator_builtins':True,'builtin_overrides'
         'object_sha256':hashlib.sha256((O/'kern_exec.o').read_bytes()).hexdigest(),
         'compiler':version,'command':args,'hardware_tested':False}
 (O/'report.json').write_text(json.dumps(report,indent=2)+'\n')
+exit_manifest=json.loads((S/'exit-source.json').read_text())
+exit_source=T/'xnu/bsd/kern/kern_exit.c'
+assert hashlib.sha256(exit_source.read_bytes()).hexdigest()==exit_manifest['original_sha256']
+subprocess.run(['patch','--batch','--fuzz=0','-p1','-i',str(S/'native-exit.patch')],cwd=T/'xnu',check=True)
+assert hashlib.sha256(exit_source.read_bytes()).hexdigest()==exit_manifest['patched_sha256']
+exit_args=[a.replace('kern_exec.c','kern_exit.c').replace('kern_exec.d','kern_exit.d').replace('kern_exec.o','kern_exit.o') for a in args]
+result=subprocess.run(exit_args,cwd=T/'build/xnu.obj/DEVELOPMENT_ARM64_PANDORA/bsd/DEVELOPMENT',capture_output=True,text=True)
+(O/'exit-compile.log').write_text(result.stdout+result.stderr)
+if result.returncode:raise SystemExit(result.stderr[-8000:])
+(O/'exit-report.json').write_text(json.dumps({'compiled':True,'real_apple_allocator_builtins':True,'builtin_overrides':[],
+    'source_sha256':exit_manifest['patched_sha256'],'object_sha256':hashlib.sha256((O/'kern_exit.o').read_bytes()).hexdigest(),
+    'command':exit_args,'compiler':version,'hardware_tested':False},indent=2)+'\n')
 print('PASS: native exec hook compiled by Apple clang with original typed allocator builtins')
